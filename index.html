@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SillyTavern 灵感信笺</title>
+  <style>
+    :root {
+      --bg: #f7f1df;
+      --paper: #fbf7eb;
+      --ink: #2b241b;
+      --muted: #766a5f;
+      --edge: #d6c9b6;
+      --accent: #9c7a3c;
+      --accent-strong: #b38638;
+      --accent-soft: #d6b574;
+      --danger: #b0453d;
+      --shadow: rgba(78, 54, 36, 0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Serif SC", "Kaiti SC", "Songti SC", "STKaiti", "SimSun", serif;
+      background:
+        radial-gradient(circle at 18% 22%, #fffdf8 0%, #f2e9d6 35%, transparent 45%),
+        radial-gradient(circle at 80% 8%, #f5eedf 0%, #e9dec8 32%, transparent 46%),
+        linear-gradient(135deg, #f9f4e8 0%, #f1e6d4 50%, #fbf7eb 100%),
+        var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      position: relative;
+      padding-bottom: 24px;
+    }
+    /* 洒金宣纸纹理 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, #d9c38f66 1px, transparent 0),
+        radial-gradient(circle, #c4a56655 1px, transparent 0),
+        radial-gradient(circle, #b38b4c44 1.2px, transparent 0);
+      background-size: 140px 160px, 180px 200px, 220px 180px;
+      background-position: 10% 20%, 60% 10%, 30% 70%;
+      opacity: 0.65;
+      mix-blend-mode: multiply;
+      z-index: 0;
+    }
+    /* 细栅格纹理 */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(#e8ddc880 1px, transparent 1px),
+        linear-gradient(90deg, #e8ddc880 1px, transparent 1px);
+      background-size: 22px 22px;
+      mix-blend-mode: multiply;
+      opacity: 0.18;
+      z-index: 0;
+    }
+    header {
+      padding: 18px 16px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      background: #f7efdfdd;
+      border-bottom: 1px solid #d8cbb8;
+      box-shadow: 0 12px 32px var(--shadow);
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.08em;
+      background: linear-gradient(120deg, #c39b4b 0%, #e6c980 30%, #b38438 60%, #e1c36e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 1px 0 #fff6dd, 0 0 12px rgba(179, 132, 56, 0.25);
+      font-weight: 700;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      letter-spacing: 0.06em;
+    }
+    .container { padding: 16px; max-width: 1120px; margin: 0 auto; position: relative; z-index: 1; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      padding: 14px 16px 16px;
+      box-shadow: 0 18px 36px var(--shadow), inset 0 0 0 1px #ffffffaa;
+      position: relative;
+      overflow: hidden;
+      transition: transform 120ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, #e9ddc733 0, transparent 30%),
+                  radial-gradient(circle at 80% 10%, #f2e7d433 0, transparent 35%);
+      pointer-events: none;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 22px 42px rgba(60, 42, 26, 0.16);
+      border-color: #cba35c;
+    }
+    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; letter-spacing: 0.02em; }
+    input, textarea, select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #d6c9b6;
+      background: linear-gradient(180deg, #fbf7eb, #f1e6d6);
+      color: var(--ink);
+      padding: 10px 11px;
+      font-size: 14px;
+      transition: border 0.15s, box-shadow 0.15s, transform 0.05s;
+      box-shadow: inset 0 1px 0 #fff, 0 6px 14px rgba(80, 64, 48, 0.08);
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px #d6b57455;
+    }
+    textarea { min-height: 140px; resize: vertical; line-height: 1.55; }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      border: none;
+      background: linear-gradient(135deg, #b88a3f, #d6b574);
+      color: #241a10;
+      box-shadow: 0 10px 20px rgba(154, 118, 52, 0.26);
+      letter-spacing: 0.04em;
+    }
+    button.secondary {
+      background: #f6efe1;
+      color: var(--ink);
+      border: 1px solid #d8ccba;
+      box-shadow: 0 6px 12px rgba(80, 64, 48, 0.08);
+      font-weight: 600;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1; }
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    .tag {
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #f2e8d7;
+      color: var(--muted);
+      font-size: 12px;
+      border: 1px solid #d8cbb8;
+    }
+    .list { margin-top: 18px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .note {
+      border: 1px solid #d6c9b6;
+      background: linear-gradient(180deg, #fbf7eb, #f2e7d6);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 12px 24px var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform 120ms ease, box-shadow 150ms ease, border-color 150ms ease;
+      cursor: pointer;
+    }
+    .note::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 18% 25%, #eadfc933 0, transparent 32%),
+                  radial-gradient(circle at 86% 12%, #f3ead833 0, transparent 40%);
+      pointer-events: none;
+    }
+    .note:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 30px rgba(60, 42, 26, 0.18);
+      border-color: #cba35c;
+    }
+    .note header {
+      position: static;
+      background: transparent;
+      border: none;
+      padding: 0 0 6px 0;
+    }
+    .note-title { font-weight: 700; letter-spacing: 0.02em; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .note-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .chip {
+      padding: 3px 9px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #2b241b;
+      background: linear-gradient(135deg, #f2e7d2, #e3d4b6);
+      border: 1px solid #d6c9b6;
+      box-shadow: inset 0 1px 0 #fff;
+    }
+    .danger { background: linear-gradient(135deg, #b0453d, #d4665f); color: #fefaf7; border: 1px solid #9c3a33; }
+    .success { background: linear-gradient(135deg, #4b8a63, #7fb594); color: #0f120c; border: 1px solid #3b7a57; }
+    .format-menu {
+      background: var(--paper);
+      border-radius: 10px;
+      border: 1px solid var(--edge);
+      padding: 6px 8px;
+      box-shadow: 0 14px 30px var(--shadow);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .format-menu button {
+      width: 100%;
+      text-align: left;
+      margin: 0;
+      font-size: 12px;
+      padding: 6px 10px;
+      background: #f6efe1;
+      color: var(--ink);
+      border: 1px solid #d8ccba;
+      box-shadow: 0 3px 6px rgba(80, 64, 48, 0.08);
+      border-radius: 8px;
+    }
+    .format-menu button:hover {
+      background: #f1e6d4;
+      border-color: #cba35c;
+    }
+    /* 详情浮层 */
+    .detail-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 16, 10, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 20;
+    }
+    .detail-panel {
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--paper);
+      border-radius: 16px;
+      box-shadow: 0 22px 40px var(--shadow);
+      border: 1px solid var(--edge);
+      padding: 16px 18px 18px;
+      position: relative;
+    }
+    .detail-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+    .detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .detail-content {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 14px;
+      margin: 8px 0 10px;
+    }
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .detail-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 640px) {
+      .row { flex-direction: column; }
+      header { top: 0; }
+    }
+    .small { font-size: 12px; }
+    .area-title { margin: 4px 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>灵感信笺</h1>
+    <div class="subtitle">PC / 手机 · 离线本地存储 · 支持导入导出</div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <div class="area-title">快速记录</div>
+        <label>类型</label>
+        <select id="type">
+          <option value="灵感">灵感</option>
+          <option value="角色卡">角色卡</option>
+          <option value="世界书">世界书</option>
+          <option value="变量代码">变量代码</option>
+          <option value="美化">美化</option>
+        </select>
+        <label>标题</label>
+        <input id="title" placeholder="例：傲娇骑士的背景钩子">
+        <label>标签（逗号分隔）</label>
+        <input id="tags" placeholder="例：骑士,傲娇,情节">
+        <label>正文 / 片段</label>
+        <textarea id="content" placeholder="写下设定、变量片段、世界书条目..."></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button id="save">保存/更新</button>
+          <button class="secondary" id="beautify">排版优化</button>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button class="secondary" id="load-template">插入模板</button>
+          <button class="secondary" id="clear-form">清空表单</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="area-title">过滤与导入导出</div>
+        <label>搜索</label>
+        <input id="search" placeholder="标题/正文/标签关键字...">
+        <label>按类型筛选</label>
+        <select id="filter-type">
+          <option value="">全部</option>
+          <option value="灵感">灵感</option>
+          <option value="角色卡">角色卡</option>
+          <option value="世界书">世界书</option>
+          <option value="变量代码">变量代码</option>
+          <option value="美化">美化</option>
+        </select>
+        <div class="row" style="margin-top:12px;">
+          <button id="export">导出</button>
+          <button class="secondary" id="import">导入</button>
+          <input
+            type="file"
+            id="file"
+            accept=".json,.txt,application/json,text/plain,application/msword"
+            style="display:none;"
+          >
+        </div>
+        <div class="muted small" style="margin-top:8px;">导出/导入数据仅在本地，不会上传。</div>
+      </section>
+    </div>
+
+    <section style="margin-top:18px;">
+      <div class="area-title">记录列表</div>
+      <div id="list" class="list"></div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "sillytavern-notes-v1";
+    const typeEl = document.getElementById("type");
+    const titleEl = document.getElementById("title");
+    const tagsEl = document.getElementById("tags");
+    const contentEl = document.getElementById("content");
+    const searchEl = document.getElementById("search");
+    const filterTypeEl = document.getElementById("filter-type");
+    const filterTagEl = document.createElement("input");
+    const sortEl = document.createElement("select");
+    const pinOnlyEl = document.createElement("input");
+    const listEl = document.getElementById("list");
+    const fileEl = document.getElementById("file");
+    let editingId = null;
+    let currentDetailId = null;
+
+    const templates = {
+      "角色卡": `姓名：\n身份/职阶：\n性格关键词：\n动机/弱点：\n口癖：\n三行背景：\n战斗/技能亮点：\n互动钩子：\n`,
+      "世界书": `条目名：\n类型（地点/派系/物品/事件）：\n一句话概述：\n详情：\n关联条目：\n变量标签：\n`,
+      "变量代码": `// SillyTavern 变量示例\nconst mood = memory.get("mood") || "calm";\nconst hook = pick(["旅店", "森林", "市集"]);\noutput = \`当前心情: \${mood}\\n场景钩子: \${hook}\`;\n`,
+      "美化": `# 标题\n## 小节\n- 列表项 1\n- 列表项 2\n\n> 引用示例\n\n**加粗** 与 _斜体_\n`
+    };
+
+    // 在过滤区动态插入更细化控件
+    (function injectFilters() {
+      const filterCard = document.querySelectorAll(".card")[1];
+      const tagLabel = document.createElement("label");
+      tagLabel.textContent = "按标签筛选（包含任一标签，逗号分隔）";
+      filterTagEl.placeholder = "例：魔法, 公爵";
+      filterTagEl.style.marginBottom = "8px";
+      const sortLabel = document.createElement("label");
+      sortLabel.textContent = "排序";
+      sortEl.innerHTML = `
+        <option value="updated">更新时间（新→旧）</option>
+        <option value="created">创建时间（新→旧）</option>
+        <option value="title">标题（A→Z）</option>
+        <option value="type">类型</option>
+      `;
+      sortEl.style.marginBottom = "8px";
+      const pinWrap = document.createElement("div");
+      pinWrap.className = "row";
+      const pinLabel = document.createElement("label");
+      pinLabel.textContent = "仅显示星标";
+      pinOnlyEl.type = "checkbox";
+      pinOnlyEl.style.width = "auto";
+      pinOnlyEl.style.transform = "translateY(2px)";
+      pinWrap.append(pinLabel, pinOnlyEl);
+      filterCard.append(tagLabel, filterTagEl, sortLabel, sortEl, pinWrap);
+    })();
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        console.error(e);
+        return [];
+      }
+    }
+    const normalize = (str = "") => str.toLowerCase().trim();
+    const buildQueryTokens = (value = "") =>
+      value
+        .toLowerCase()
+        .split(/\s+/)
+        .map(t => t.trim())
+        .filter(Boolean);
+    const debounce = (fn, delay = 120) => {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    };
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+    function formatText(text) {
+      // 标准化换行并去掉每行尾部多余空格
+      return (text || "")
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(line => line.replace(/\s+$/g, ""))
+        .join("\n")
+        .trim();
+    }
+    function render() {
+      const qTokens = buildQueryTokens(searchEl.value);
+      const typeFilter = filterTypeEl.value;
+      const tagsFilter = filterTagEl.value.split(",").map(t => t.trim().toLowerCase()).filter(Boolean);
+      const pinOnly = pinOnlyEl.checked;
+      const sortBy = sortEl.value;
+      const data = load();
+      const filtered = data.filter(n => {
+        const haystack = normalize([n.title, n.content, n.tags.join(",")].join(" "));
+        const matchQ = qTokens.every(token => {
+          if (token.startsWith("#")) {
+            const tagQ = token.slice(1);
+            return n.tags.some(t => normalize(t).includes(tagQ));
+          }
+          if (token.startsWith("@")) {
+            const typeQ = token.slice(1);
+            return normalize(n.type).includes(typeQ);
+          }
+          return haystack.includes(token);
+        });
+        const matchType = typeFilter ? n.type === typeFilter : true;
+        const matchTags = tagsFilter.length
+          ? n.tags.some(t => tagsFilter.includes(t.toLowerCase()))
+          : true;
+        const matchPin = pinOnly ? !!n.pinned : true;
+        return matchQ && matchType && matchTags && matchPin;
+      });
+      const sorted = filtered.slice().sort((a,b) => {
+        const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        if (pinDiff !== 0) return pinDiff;
+        if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
+        if (sortBy === "type") return (a.type || "").localeCompare(b.type || "");
+        const aCreated = a.createdAt || a.updatedAt || 0;
+        const bCreated = b.createdAt || b.updatedAt || 0;
+        const aUpdated = a.updatedAt || 0;
+        const bUpdated = b.updatedAt || 0;
+        if (sortBy === "created") return bCreated - aCreated;
+        return bUpdated - aUpdated;
+      });
+
+      listEl.innerHTML = sorted.length
+        ? sorted.map(noteToHtml).join("")
+        : '<div class="muted">暂无记录</div>';
+    }
+    function noteToHtml(n) {
+      const tags = n.tags.map(t => `<span class="tag">${t}</span>`).join("");
+      const words = n.content ? n.content.length : 0;
+      return `
+      <article class="note" data-id="${n.id}">
+        <header class="row" style="align-items:center; justify-content:space-between;">
+          <div class="row" style="gap:8px; align-items:center;">
+            <span class="chip">${n.type}${n.pinned ? " ★" : ""}</span>
+            <span class="note-title">${n.title || "无标题"}</span>
+          </div>
+          <span class="muted">${new Date(n.updatedAt).toLocaleString()}</span>
+        </header>
+        <div class="muted small" style="white-space:pre-wrap; max-height:4.5em; overflow:hidden;">
+          ${escapeHtml(n.content || "").slice(0, 220)}${n.content && n.content.length > 220 ? "..." : ""}
+        </div>
+        <div class="tags">${tags || '<span class="muted">无标签</span>'}</div>
+        <div class="muted small">字数：${words} · 点击卡片查看详情与操作</div>
+      </article>`;
+    }
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[c]);
+    }
+    function upsertNote() {
+      const type = typeEl.value;
+      const title = titleEl.value.trim();
+      const tags = tagsEl.value.split(",").map(t => t.trim()).filter(Boolean);
+      const content = formatText(contentEl.value);
+      if (!content && !title) return alert("至少填写标题或正文");
+      const data = load();
+      if (editingId) {
+        const i = data.findIndex(n => n.id === editingId);
+        if (i >= 0) data[i] = { ...data[i], type, title, tags, content, updatedAt: Date.now() };
+        editingId = null;
+      } else {
+        const now = Date.now();
+        data.unshift({ id: crypto.randomUUID(), type, title, tags, content, createdAt: now, updatedAt: now, pinned: false });
+      }
+      saveData(data);
+      clearForm();
+      render();
+    }
+    function editNote(id) {
+      const n = load().find(n => n.id === id);
+      if (!n) return;
+      typeEl.value = n.type;
+      titleEl.value = n.title;
+      tagsEl.value = n.tags.join(", ");
+      contentEl.value = n.content;
+      editingId = id;
+      contentEl.focus();
+    }
+    function togglePin(id) {
+      const data = load();
+      const i = data.findIndex(n => n.id === id);
+      if (i >= 0) {
+        data[i].pinned = !data[i].pinned;
+        data[i].updatedAt = Date.now();
+        saveData(data);
+        render();
+        if (currentDetailId === id) {
+          // 重新打开详情以刷新展示
+          openDetail(id);
+        }
+      }
+    }
+    function copyNote(id) {
+      const n = load().find(n => n.id === id);
+      if (!n) return;
+      const text = `${n.title}\n[${n.type}]\n标签: ${n.tags.join(", ")}\n\n${n.content}`;
+      navigator.clipboard.writeText(text).then(() => {
+        toast("已复制到剪贴板");
+      }).catch(() => alert("复制失败，请手动复制。"));
+    }
+    function removeNote(id) {
+      if (!confirm("确定删除此记录？")) return;
+      const data = load().filter(n => n.id !== id);
+      saveData(data);
+      render();
+      if (currentDetailId === id) {
+        closeDetail();
+      }
+    }
+    function clearForm() {
+      titleEl.value = "";
+      tagsEl.value = "";
+      contentEl.value = "";
+      editingId = null;
+    }
+    function toast(msg) {
+      const div = document.createElement("div");
+      div.textContent = msg;
+      div.style.position = "fixed";
+      div.style.bottom = "16px";
+      div.style.right = "16px";
+      div.style.padding = "10px 14px";
+      div.style.background = "#1f1a14dd";
+      div.style.color = "#f8f3e7";
+      div.style.borderRadius = "10px";
+      div.style.border = "1px solid #c9b384";
+      div.style.boxShadow = "0 8px 20px rgba(0,0,0,0.25)";
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 1800);
+    }
+    function showFormatMenu(anchorBtn, options, onSelect) {
+      // 如果当前已有菜单且再次点同一个按钮，则作为“开关”直接关闭
+      const existing = document.querySelector(".format-menu");
+      if (existing && existing.__anchor === anchorBtn) {
+        existing.remove();
+        document.removeEventListener("click", existing.__outsideHandler);
+        document.removeEventListener("keydown", existing.__keyHandler);
+        window.removeEventListener("scroll", existing.__scrollHandler, true);
+        return;
+      }
+      if (existing) {
+        existing.remove();
+        document.removeEventListener("click", existing.__outsideHandler);
+        document.removeEventListener("keydown", existing.__keyHandler);
+        window.removeEventListener("scroll", existing.__scrollHandler, true);
+      }
+
+      const rect = anchorBtn.getBoundingClientRect();
+      const menu = document.createElement("div");
+      menu.className = "format-menu";
+      menu.style.position = "fixed";
+      // 先按按钮右对齐放到下方
+      const minWidth = rect.width;
+      const padding = 8;
+      menu.style.minWidth = minWidth + "px";
+      menu.innerHTML = options.map(o => `
+        <button type="button" data-value="${o.value}">
+          ${o.label}
+        </button>
+      `).join("");
+
+      document.body.appendChild(menu);
+      menu.__anchor = anchorBtn;
+
+      // 计算实际高度后，再根据视口动态微调位置，尽量避免超出
+      const menuRect = menu.getBoundingClientRect();
+      let top = rect.bottom + 6; // 默认在按钮下方留一点间距
+      let left = rect.left;
+
+      // 如果下方空间不够，则放到按钮上方
+      if (top + menuRect.height + padding > window.innerHeight) {
+        top = rect.top - menuRect.height - 6;
+      }
+      // 保证不顶到视口左右边缘
+      if (left + menuRect.width + padding > window.innerWidth) {
+        left = window.innerWidth - menuRect.width - padding;
+      }
+      if (left < padding) left = padding;
+
+      menu.style.top = Math.max(padding, top) + "px";
+      menu.style.left = left + "px";
+
+      const cleanup = () => {
+        if (!menu.isConnected) return;
+        menu.remove();
+        document.removeEventListener("click", outsideHandler);
+        document.removeEventListener("keydown", keyHandler);
+        window.removeEventListener("scroll", scrollHandler, true);
+      };
+
+      const clickHandler = (e) => {
+        const v = e.target.closest("button")?.dataset?.value;
+        if (v) {
+          onSelect(v);
+          cleanup();
+        }
+      };
+      const outsideHandler = (e) => {
+        if (!menu.contains(e.target) && e.target !== anchorBtn) {
+          cleanup();
+        }
+      };
+      const keyHandler = (e) => {
+        if (e.key === "Escape") {
+          cleanup();
+        }
+      };
+      const scrollHandler = () => {
+        cleanup();
+      };
+
+      menu.__outsideHandler = outsideHandler;
+      menu.__keyHandler = keyHandler;
+      menu.__scrollHandler = scrollHandler;
+
+      menu.addEventListener("click", clickHandler);
+      setTimeout(() => {
+        document.addEventListener("click", outsideHandler);
+        document.addEventListener("keydown", keyHandler);
+        window.addEventListener("scroll", scrollHandler, true);
+      }, 0);
+    }
+    function beautify() {
+      const raw = contentEl.value || "";
+      const compact = raw
+        .replace(/\r\n/g, "\n")
+        // 连续 3 行及以上空行压缩为 2 行
+        .replace(/\n{3,}/g, "\n\n")
+        // 制表符替换为两个空格
+        .replace(/\t/g, "  ");
+
+      const lines = compact
+        .split("\n")
+        .map(line => line.replace(/\s+$/g, "")); // 行尾空白
+
+      // 计算非空行的最小公共缩进
+      const indents = lines
+        .filter(l => l.trim().length > 0)
+        .map(l => (l.match(/^ */) || [""])[0].length);
+      const minIndent = indents.length ? Math.min(...indents) : 0;
+
+      const trimmedLines = minIndent > 0
+        ? lines.map(l => l.slice(minIndent))
+        : lines;
+
+      const finalText = trimmedLines.join("\n").trim();
+      contentEl.value = finalText;
+      toast("已对文本做简单排版整理");
+    }
+    function loadTemplate() {
+      const t = templates[typeEl.value];
+      if (t) {
+        // 如果文本框里本来有内容，就在末尾空两行再插入模板
+        const existing = contentEl.value || "";
+        const prefix = existing.trim().length
+          ? (existing.endsWith("\n") ? existing + "\n" : existing + "\n\n")
+          : "";
+        contentEl.value = prefix + t;
+        contentEl.focus();
+        toast("已插入示例模板，可按需修改");
+      } else {
+        toast("当前类型暂无预设模板，可尝试切换到「角色卡 / 世界书 / 变量代码 / 美化」");
+      }
+    }
+    function exportData(format = "json") {
+      const data = load();
+      let text = "";
+      let mime = "application/json";
+      let filename = "sillytavern-notes.json";
+
+      if (format === "txt") {
+        text = data.map(n => {
+          const tags = n.tags?.join(", ") || "";
+          const timeStr = new Date(n.updatedAt || n.createdAt || Date.now()).toLocaleString();
+          return [
+            `标题: ${n.title || "无标题"}`,
+            `类型: ${n.type || ""}`,
+            `标签: ${tags}`,
+            `更新时间: ${timeStr}`,
+            "",
+            n.content || "",
+            "----"
+          ].join("\n");
+        }).join("\n");
+        mime = "text/plain";
+        filename = "sillytavern-notes.txt";
+      } else if (format === "doc") {
+        const rows = data.map(n => {
+          const tags = (n.tags || []).join(", ");
+          const timeStr = new Date(n.updatedAt || n.createdAt || Date.now()).toLocaleString();
+          return `
+            <article style="margin-bottom:18px; padding:12px; border:1px solid #d6c9b6; border-radius:10px; background:#fbf7eb;">
+              <h3 style="margin:0 0 4px; font-size:16px;">${escapeHtml(n.title || "无标题")}</h3>
+              <div style="color:#766a5f; font-size:12px; margin-bottom:6px;">
+                <span>类型: ${escapeHtml(n.type || "")}</span>
+                &nbsp;|&nbsp;
+                <span>标签: ${escapeHtml(tags)}</span>
+                &nbsp;|&nbsp;
+                <span>更新时间: ${timeStr}</span>
+              </div>
+              <pre style="white-space:pre-wrap; font-family:'Segoe UI',sans-serif; font-size:13px; margin:0;">${escapeHtml(n.content || "")}</pre>
+            </article>
+          `;
+        }).join("\n");
+        text = `
+          <html><head><meta charset="utf-8"><title>SillyTavern Notes</title></head>
+          <body style="font-family:'Segoe UI','Microsoft YaHei',sans-serif; background:#f7f1df; color:#2b241b; padding:16px;">
+            <h2>SillyTavern 记录导出</h2>
+            ${rows}
+          </body></html>
+        `;
+        mime = "application/msword";
+        filename = "sillytavern-notes.doc";
+      } else {
+        // 默认 JSON 数组（缩进）
+        text = JSON.stringify(data, null, 2);
+        mime = "application/json";
+        filename = "sillytavern-notes.json";
+      }
+
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("已导出为 " + format.toUpperCase());
+    }
+
+    function importData(file, format = "json") {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const text = e.target.result;
+          let items = [];
+
+          const parseJsonArray = () => {
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed)) throw new Error("JSON 格式应为数组");
+            return parsed;
+          };
+          const parseTxt = () => {
+            const blocks = text.split(/^----\s*$/m).map(b => b.trim()).filter(Boolean);
+            if (!blocks.length) throw new Error("TXT 内容格式不正确");
+            return blocks.map(block => {
+              const lines = block.split("\n");
+              const obj = { tags: [], content: "" };
+              lines.forEach(line => {
+                if (line.startsWith("标题:")) obj.title = line.replace("标题:", "").trim();
+                else if (line.startsWith("类型:")) obj.type = line.replace("类型:", "").trim();
+                else if (line.startsWith("标签:")) obj.tags = line.replace("标签:", "").split(",").map(t => t.trim()).filter(Boolean);
+                else if (line.startsWith("更新时间:")) obj.updatedAt = Date.parse(line.replace("更新时间:", "").trim()) || Date.now();
+              });
+              const dividerIndex = lines.findIndex(l => l.trim() === "");
+              if (dividerIndex >= 0) {
+                obj.content = lines.slice(dividerIndex + 1).join("\n").trim();
+              }
+              return obj;
+            });
+          };
+          const parseDoc = () => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, "text/html");
+            const articles = Array.from(doc.querySelectorAll("article"));
+            if (!articles.length) throw new Error("DOC 中未找到记录内容");
+            return articles.map(a => {
+              const title = a.querySelector("h3")?.textContent?.trim() || "无标题";
+              const meta = a.querySelector("div")?.textContent || "";
+              const typeMatch = meta.match(/类型:\s*([^|]+)/);
+              const tagsMatch = meta.match(/标签:\s*([^|]+)/);
+              const timeMatch = meta.match(/更新时间:\s*([^\|]+)/);
+              const pre = a.querySelector("pre");
+              return {
+                title,
+                type: typeMatch ? typeMatch[1].trim() : "",
+                tags: tagsMatch ? tagsMatch[1].split(",").map(t => t.trim()).filter(Boolean) : [],
+                content: pre ? pre.textContent : "",
+                updatedAt: timeMatch ? Date.parse(timeMatch[1].trim()) || Date.now() : Date.now()
+              };
+            });
+          };
+
+          if (format === "txt") {
+            items = parseTxt();
+          } else if (format === "doc") {
+            items = parseDoc();
+          } else {
+            items = parseJsonArray();
+          }
+
+          if (!Array.isArray(items)) throw new Error("解析后数据不是数组");
+
+          const merged = [...items, ...load()].reduce((map, item) => {
+            if (!item.id) item.id = crypto.randomUUID();
+            map.set(item.id, { ...item, updatedAt: item.updatedAt || Date.now(), tags: item.tags || [] });
+            return map;
+          }, new Map());
+          saveData(Array.from(merged.values()).sort((a,b)=>b.updatedAt-a.updatedAt));
+          render();
+          toast("导入完成（" + items.length + " 条）");
+        } catch (err) {
+          alert("导入失败：" + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+    function closeDetail() {
+      const backdrop = document.querySelector(".detail-backdrop");
+      if (backdrop) backdrop.remove();
+      currentDetailId = null;
+    }
+    function openDetail(id) {
+      const n = load().find(n => n.id === id);
+      if (!n) return;
+      currentDetailId = id;
+      closeDetail();
+      const backdrop = document.createElement("div");
+      backdrop.className = "detail-backdrop";
+      backdrop.addEventListener("click", e => {
+        if (e.target === backdrop) closeDetail();
+      });
+      const words = n.content ? n.content.length : 0;
+      const tagsHtml = n.tags.map(t => `<span class="tag">${t}</span>`).join("") || '<span class="muted">无标签</span>';
+      backdrop.innerHTML = `
+        <section class="detail-panel">
+          <header>
+            <div class="detail-meta">
+              <span class="chip">${n.type}${n.pinned ? " ★" : ""}</span>
+              <span class="detail-title">${escapeHtml(n.title || "无标题")}</span>
+            </div>
+          </header>
+          <div class="tags">${tagsHtml}</div>
+          <div class="detail-content">${escapeHtml(n.content || "")}</div>
+          <div class="detail-footer">
+            <span>字数：${words}</span>
+            <span>更新时间：${new Date(n.updatedAt).toLocaleString()}</span>
+          </div>
+          <div class="detail-actions">
+            <button class="secondary" data-action="pin">${n.pinned ? "取消星标" : "星标置顶"}</button>
+            <button class="secondary" data-action="edit">编辑</button>
+            <button class="secondary" data-action="copy">复制</button>
+            <button class="secondary danger" data-action="delete">删除</button>
+            <button class="secondary" data-action="close">关闭</button>
+          </div>
+        </section>
+      `;
+      document.body.appendChild(backdrop);
+
+      const panel = backdrop.querySelector(".detail-panel");
+      panel.querySelector("[data-action='close']").addEventListener("click", () => closeDetail());
+      panel.querySelector("[data-action='edit']").addEventListener("click", () => {
+        editNote(id);
+        closeDetail();
+      });
+      panel.querySelector("[data-action='copy']").addEventListener("click", () => {
+        copyNote(id);
+      });
+      panel.querySelector("[data-action='delete']").addEventListener("click", () => {
+        removeNote(id);
+      });
+      panel.querySelector("[data-action='pin']").addEventListener("click", () => {
+        togglePin(id);
+      });
+    }
+
+    document.getElementById("save").addEventListener("click", upsertNote);
+    document.getElementById("beautify").addEventListener("click", beautify);
+    document.getElementById("clear-form").addEventListener("click", clearForm);
+    document.getElementById("load-template").addEventListener("click", loadTemplate);
+    const debouncedRender = debounce(render, 120);
+
+    searchEl.addEventListener("input", debouncedRender);
+    filterTypeEl.addEventListener("change", render);
+    sortEl.addEventListener("change", render);
+    filterTagEl.addEventListener("input", debouncedRender);
+    pinOnlyEl.addEventListener("change", render);
+
+    document.getElementById("export").addEventListener("click", (e) => {
+      const btn = e.currentTarget;
+      showFormatMenu(btn, [
+        { value: "json", label: "JSON（推荐）" },
+        { value: "txt",  label: "TXT 纯文本" },
+        { value: "doc",  label: "Word（.doc）" },
+      ], (format) => {
+        exportData(format);
+      });
+    });
+
+    let importFormat = "json";
+    document.getElementById("import").addEventListener("click", (e) => {
+      const btn = e.currentTarget;
+      showFormatMenu(btn, [
+        { value: "json", label: "JSON（数组）" },
+        { value: "txt",  label: "TXT（由本工具导出）" },
+        { value: "doc",  label: "DOC（由本工具导出）" },
+      ], (format) => {
+        importFormat = format;
+        fileEl.click();
+      });
+    });
+
+    fileEl.addEventListener("change", e => {
+      if (e.target.files[0]) importData(e.target.files[0], importFormat);
+      fileEl.value = "";
+    });
+
+    // 列表区域：点击卡片打开详情
+    listEl.addEventListener("click", e => {
+      const article = e.target.closest("article.note");
+      if (!article) return;
+      openDetail(article.dataset.id);
+    });
+
+    render();
+  </script>
+</body>
+</html>
